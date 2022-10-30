@@ -140,14 +140,6 @@ Section LeadingEntry.
     - exact nothing.
   Defined.
 
-  (* Maybe something like the following would work for a more general version,
-    with proofs remaining similar:
-
-    {X : UU} { n : nat } (v : Vector F n)
-    (P' : ((stn n) -> UU)) (iter : ⟦ S n ⟧%stn)
-    : (forall n' : stn n, isdecprop (P' n')) ->  maybe (⟦ n ⟧%stn).
-
-    This could simplify downstreams proofs in Elimination.Corollaries. *)
 
   Definition leading_entry_compute {n : nat} (v : Vector F n)
      := leading_entry_compute_internal v (n,, natgthsnn _).
@@ -195,27 +187,27 @@ Section LeadingEntry.
 
   Lemma leading_entry_compute_dual_internal_inv1
     { n : nat } (v : Vector F n) (iter : ⟦ S n ⟧%stn)
-    (not_nothing : (leading_entry_compute_dual_internal v iter) != nothing)
-    : (∑ i : ⟦ n ⟧%stn,
-             just i = (leading_entry_compute_dual_internal v iter)
-             × i < iter × (v i != 0%ring)).
+    {i : stn n} (not_nothing : (leading_entry_compute_dual_internal v iter) = just i)
+    : i < iter × (v i != 0%ring).
   Proof.
     revert not_nothing.
     unfold leading_entry_compute_dual_internal.
     destruct iter as [iter p].
-    induction iter as [| iter IH]. { easy. }
+    induction iter as [| iter IH]. { simpl; intros. contradiction (negpathsii1ii2 _ _ (!not_nothing)). }
     rewrite nat_rect_step.
     destruct (fldchoice0 _) as [eq0| neq0].
     - intros H.
       apply IH in H.
-      destruct H as [e [eq [lt neq0]]].
-      exists e, eq.
+      destruct H as [lt neq0].
       use tpair. {apply (istransnatlth _ _ _  lt (natgthsnn iter) ). }
       apply neq0.
     - intros ?.
-      exists (iter,, p).
-      use tpair. {reflexivity. }
-      exists (natgthsnn iter); easy.
+      rename not_nothing into eq.
+      apply just_injectivity in eq.
+      use tpair. {rewrite <- eq. apply natgthsnn. }
+      simpl.
+      rewrite <- eq.
+      exact neq0.
   Defined.
 
   Definition leading_entry_compute_dual_internal_inv2
@@ -246,56 +238,40 @@ Section LeadingEntry.
     (iter : ⟦ S n ⟧%stn)
     (i : ⟦ n ⟧%stn)
     (eq : (leading_entry_compute_dual_internal v iter) = just i)
-    : (v i != 0%ring) × (∏ i' : ⟦ n ⟧%stn, i < i' -> i' < iter -> v i' = 0%ring).
+    : (∏ i' : ⟦ n ⟧%stn, i < i' -> i' < iter -> v i' = 0%ring).
   Proof.
-    unfold leading_entry_compute_dual_internal.
-    assert (not_nothing : leading_entry_compute_dual_internal v iter != nothing).
-    { destruct (maybe_choice (leading_entry_compute_dual_internal v iter));
-      try assumption; rewrite eq; apply negpathsii1ii2. }
-    revert not_nothing.
+    revert eq.
     destruct iter as [iter p].
     induction iter as [| iter IH].
-    { intros; now use tpair. }
+    { intros _ ? _ x; contradiction (negnatgth0n _ x). }
     set (p' := istransnatlth iter _ _ p (natgthsnn _)).
     pose (@leading_entry_compute_dual_internal n v (S _,, p)) as H.
-    destruct (maybe_choice' H) as [s | ?]. 2: {contradiction. }
+    destruct (maybe_choice' H) as [s | c].
+    2: {unfold H in c. intros; rewrite eq in c. contradiction (negpathsii1ii2 _ _ c). }
     unfold leading_entry_compute_dual_internal; rewrite nat_rect_step.
     destruct (fldchoice0 (v (iter,, p) )) as [z | nz].
     - intros H'.
-      assert (not_nothing : leading_entry_compute_dual_internal v (S iter,, p) != nothing).
-      { destruct (!eq); apply negpathsii1ii2. }
-      use tpair.
-      { destruct (@leading_entry_compute_dual_internal_inv1 _ _ (S _ ,, p) not_nothing)
-          as [? [eq' C2]].
-        destruct (!eq), s as [s s_eq].
-        apply (just_injectivity) in eq'.
-        rewrite <- eq'; apply C2.
-      }
       simpl; intros i' ? ?.
       destruct (natlehchoice i' iter) as [? | eq']. {assumption. }
-      2: {refine (_ @ z); apply maponpaths, stn_eq, eq'. }
+      2: {refine (_self_inverse @ z); apply maponpaths, stn_eq, eq'. }
       apply (IH p'); try assumption.
+    - intros ? j i_le_iter lts.
+      apply natlthtonegnatgeh in i_le_iter.
       unfold leading_entry_compute_dual_internal in eq.
-      rewrite nat_rect_step in eq.
-      destruct (fldchoice0 _) in eq. 2: {contradiction. }
-      unfold leading_entry_compute_dual_internal; unfold p'
-      ; now rewrite eq.
-    - intros ?; simpl; use tpair.
-      { destruct (maybe_choice
-          (leading_entry_compute_dual_internal v (S _,, p))) as [H' | contr_eq].
-        - pose (C2 := @leading_entry_compute_dual_internal_inv1 _ v (S iter,, p) H').
-          destruct C2 as [? [eq' [_ ?]]]; rewrite eq in eq'.
-          apply (just_injectivity) in eq'; now rewrite <- eq'.
-        - destruct (!contr_eq);
-          symmetry in eq; now apply negpathsii1ii2 in eq.
-      }
-      intros ? i'_gt_iter i_le_iter.
-      apply natlthtonegnatgeh in i'_gt_iter.
-      unfold leading_entry_compute_dual_internal in eq.
-      rewrite nat_rect_step in eq.
-      destruct (fldchoice0 _) as [? | eq'] in eq. {contradiction. }
       apply just_injectivity in eq.
       now rewrite <- eq in * |-.
+  Defined.
+
+  Definition leading_entry_compute_dual_internal_inv4
+    {n : nat} (v : Vector F n)
+    (iter : ⟦ S n ⟧%stn)
+    (i : ⟦ n ⟧%stn)
+    (eq : (leading_entry_compute_dual_internal v iter) = just i)
+    : (v i != 0%ring) × (∏ i' : ⟦ n ⟧%stn, i < i' -> i' < iter -> v i' = 0%ring).
+  Proof.
+    use tpair.
+    - apply (leading_entry_compute_dual_internal_inv1 _ iter); assumption.
+    - simpl. apply (leading_entry_compute_dual_internal_inv3 _ iter); assumption.
   Defined.
 
   Lemma leading_entry_compute_internal_inv1
@@ -307,7 +283,7 @@ Section LeadingEntry.
     destruct (leading_entry_compute_impl v i eq) as [i' H1].
     pose (H2 := leading_entry_compute_eq v i i' eq H1).
     unfold leading_entry_compute_internal in eq.
-    pose (H3 := @leading_entry_compute_dual_internal_inv3 _
+    pose (H3 := @leading_entry_compute_dual_internal_inv4 _
       (λ i : (⟦ n ⟧)%stn, v (dualelement i)) (n,, natgthsnn _) (dualelement i)).
     destruct (maybe_choice' (leading_entry_compute_dual_internal
               (λ i : (⟦ n ⟧)%stn, v (dualelement i)) (n,, natgthsnn _)))
@@ -379,7 +355,7 @@ Section LeadingEntry.
     { now apply leading_entry_compute_internal_inv1. }
     intros i' i_gt_i'.
     destruct (@leading_entry_compute_impl _ _ _ eq) as [entry compeq].
-    pose (H := @leading_entry_compute_dual_internal_inv3 _ _ _ _ compeq).
+    pose (H := @leading_entry_compute_dual_internal_inv4 _ _ _ _ compeq).
     simpl in H; destruct H as [neq0 eq0].
     rewrite <- (eq0 (dualelement i')).
     - now rewrite dualelement_2x.
@@ -403,19 +379,20 @@ Section Pivot.
             (∏ i : ⟦ m ⟧%stn, row_sep ≤ i -> mat i k = 0%ring).
   Proof.
     pose
-      (H := (leading_entry_compute_dual_internal_inv1
+      (H := (@leading_entry_compute_dual_internal_inv1 _
       _ (col mat k) (m,, natgthsnn _))).
     destruct
-      (maybe_choice (leading_entry_compute_dual_internal
+      (maybe_choice' (leading_entry_compute_dual_internal
       _ (col mat k) (m,, natgthsnn _)))
-      as [? | none].
-    - destruct H as [entry [eq neq]]; try assumption.
-      destruct (natlthorgeh entry row_sep) as [? | gt].
-      2: { apply ii1; exists entry, gt; apply neq. }
+      as [some | none].
+    - destruct some as [t ist].
+      destruct (H t) as [lt neq0]; try assumption.
+      destruct (natlthorgeh t row_sep) as [? | gt].
+      2: { apply ii1; exists t, gt; apply neq0. }
       apply ii2.
       destruct
-        (@leading_entry_compute_dual_internal_inv3
-        _ _ (col mat k) (m,, natgthsnn _) entry (!eq)) as [H3 H4].
+        (@leading_entry_compute_dual_internal_inv4
+        _ _ (col mat k) (m,, natgthsnn _) t ist) as [H3 H4].
       intros i ke_le_i.
       unfold col, transpose, flip in * |-.
       rewrite H4; try easy.
@@ -516,7 +493,6 @@ Section Gauss.
     - refine ((@add_row_mult_matrix F _ k_i i _)%ring ** mat).
       exact (- ((mat i k_j) * fldmultinv' (mat k_i k_j)))%ring.
   Defined.
-
 
   Definition gauss_clear_column_step'
     {m n : nat}
@@ -1091,8 +1067,7 @@ Section Gauss.
   Defined.
 
   (** Notion of being row echelon "up to" a separator,
-      and fulfilling criteria 1 and 2 from the preamble separately.
-      For proof reasons. *)
+      and fulfilling criteria 1 and 2 from the preamble separately. *)
   Definition is_row_echelon_partial_1
     {m n : nat} (mat : Matrix F m n) (row_sep : ⟦ S m ⟧%stn) :=
     ∏ i_1 i_2 : ⟦ m ⟧%stn,
@@ -1103,10 +1078,6 @@ Section Gauss.
     -> j_1 ≤ j_2
     -> mat i_2 j_1 = 0%ring.
 
-  Definition is_row_echelon_1
-    {m n : nat} (mat : Matrix F m n) :=
-    is_row_echelon_partial_1 mat (m,, natlthnsn _).
-
   Definition is_row_echelon_partial_2
     {m n : nat} (mat : Matrix F m n) (iter : ⟦ S m ⟧%stn) :=
     ∏ (i_1 i_2 : ⟦ m ⟧%stn),
@@ -1115,30 +1086,11 @@ Section Gauss.
     -> i_1 < i_2
     -> mat i_2 = const_vec 0%ring.
 
-  Definition is_row_echelon_2
-    {m n : nat} (mat : Matrix F m n) :=
-    is_row_echelon_partial_2 mat (m,, natlthnsn _).
-
   Definition is_row_echelon_partial
     {m n : nat} (mat : Matrix F m n) (iter : ⟦ S m ⟧%stn)
     := is_row_echelon_partial_1 mat iter × is_row_echelon_partial_2 mat iter.
 
-  Lemma is_row_echelon_from_partial
-    {m n : nat} (mat : Matrix F m n)
-    : (is_row_echelon_partial mat (m,, natgthsnn _))
-    -> is_row_echelon mat.
-  Proof.
-    unfold is_row_echelon, is_row_echelon_partial.
-    unfold is_row_echelon_partial_1, is_row_echelon_partial_2.
-    intros H ? ?; intros; use tpair.
-    { intros j_1 j_2 X. refine (pr1 H i_1 i_2 j_2 _ _ _ );
-      try apply X; try assumption; exact (pr2 i_1). }
-    simpl; intros.
-    refine ((pr2 H) i_1 i_2 _ _ _ ); try assumption.
-    exact (pr2 i_1).
-  Defined.
-
-  (** Step lemma*)
+  (** Step lemma *)
   Lemma gauss_clear_row_inv0
     { m n : nat } (mat : Matrix F m n) (p : n > 0)
     (row_sep : (⟦ S m ⟧%stn)) (p' : row_sep < m)
@@ -1247,8 +1199,8 @@ Section Gauss.
     {contradiction (negnatgth0n i_1 i1_lt_rowsep). }
     rename i1_lt_rowsep into i1_lt_srowsep.
     set (lt' := (istransnatlth _ _ _ (natgthsnn row_sep) lt)).
-    rewrite nat_rect_step in *.
-    unfold gauss_clear_row in *.
+    rewrite nat_rect_step in no_leading |- *.
+    unfold gauss_clear_row in IH, no_leading |- *.
     destruct (natchoice0 n) as [contr_eq | gt].
     { rewrite contr_eq in p.
       contradiction (isirreflnatgth _ p). }
@@ -1352,6 +1304,21 @@ Section Gauss.
     now destruct row_sep.
   Defined.
 
+  Lemma is_row_echelon_from_partial
+    {m n : nat} (mat : Matrix F m n)
+    : (is_row_echelon_partial mat (m,, natgthsnn _))
+    -> is_row_echelon mat.
+  Proof.
+    unfold is_row_echelon, is_row_echelon_partial.
+    unfold is_row_echelon_partial_1, is_row_echelon_partial_2.
+    intros H ? ?; intros; use tpair.
+    { intros j_1 j_2 X. refine (pr1 H i_1 i_2 j_2 _ _ _ );
+      try apply X; try assumption; exact (pr2 i_1). }
+    simpl; intros.
+    refine ((pr2 H) i_1 i_2 _ _ _ ); try assumption.
+    exact (pr2 i_1).
+  Defined.
+
   Lemma gauss_clear_rows_up_to_inv3
     { m n : nat }
     (mat : Matrix F m n)
@@ -1365,16 +1332,6 @@ Section Gauss.
     - now apply gauss_clear_rows_up_to_inv1.
     - now apply gauss_clear_rows_up_to_inv2.
   Defined.
-
-  Definition gauss_clear_all_rows_inv1
-  { m n : nat } (mat : Matrix F m n) (p : n > 0)
-  : is_row_echelon_1 (gauss_clear_all_rows mat).
-  Proof. now apply gauss_clear_rows_up_to_inv1. Defined.
-
-  Definition gauss_clear_all_rows_inv2
-  { m n : nat } (mat : Matrix F m n) (p : n > 0)
-  : is_row_echelon_2 (gauss_clear_all_rows mat).
-  Proof. now apply gauss_clear_rows_up_to_inv2. Defined.
 
   Definition gauss_clear_all_rows_inv3
   { m n : nat } (mat : Matrix F m n) (p : n > 0)
