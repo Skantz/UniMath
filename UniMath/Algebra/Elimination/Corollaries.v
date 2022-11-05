@@ -335,23 +335,21 @@ Section BackSubZero.
   pose (leading_entry := leading_entry_compute F (flip_fld_bin_vec v)).
   destruct (maybe_choice' leading_entry) as [some | none].
   - right; use tpair; simpl. {apply some. }
-    pose (leading_entry_inv := @leading_entry_compute_inv2 F _
-      (flip_fld_bin_vec v) (pr1 some) (pr2 some)).
-    destruct leading_entry_inv as [some_neq_0 prev_eq_0].
+    destruct (@leading_entry_compute_inv2 F _ (flip_fld_bin_vec v) (pr1 some) (pr2 some))
+      as [some_neq_0 prev_eq_0].
     unfold is_leading_entry, flip_fld_bin_vec, flip_fld_bin in * |-.
     destruct (fldchoice0 (v _)); try contradiction.
     use tpair; try assumption.
-    intros j lt.
-    pose (eq := prev_eq_0 _ lt).
-    generalize eq; clear eq prev_eq_0.
+    intros ? lt.
+    specialize (prev_eq_0 _ lt).
     now destruct (fldchoice0 (v j)).
   - left; intros j.
-    pose (prev_eq_0 := @leading_entry_compute_inv1 _ _ (flip_fld_bin_vec v) none j).
-    rewrite <- prev_eq_0; try apply (pr2 (dualelement j)); clear prev_eq_0.
+    rewrite <- (@leading_entry_compute_inv1 _ _ (flip_fld_bin_vec v) none j).
+    try apply (pr2 (dualelement j)).
     destruct (fldchoice0 (v j)) as [eq | neq];
-      unfold is_leading_entry, flip_fld_bin_vec, flip_fld_bin in *.
-    + destruct (fldchoice0 _); try assumption.
-      rewrite eq; intros contr_neq.
+      unfold is_leading_entry, flip_fld_bin_vec, flip_fld_bin in *
+      ; destruct (fldchoice0 _); try assumption.
+    + rewrite eq; intros contr_neq.
       contradiction (nonzeroax _ (pathsinv0 contr_neq)).
     + destruct (fldchoice0 (v j)) as [contr_eq | ?]; try assumption.
       now rewrite contr_eq in neq.
@@ -656,7 +654,6 @@ Section Inverse.
     pose (invmat := @matrix_right_inverse_construction_inv _ _ CA_ut nonz).
     unfold CA in invmat.
     rewrite matrix_mult_assoc in invmat.
-    pose (CM := @gauss_clear_all_rows_matrix_invertible _ _ _ A gt).
     assert (eq : (C ** A ** D) = (A ** D ** C)).
     { unfold CA in invmat. unfold D, CA.
       rewrite matrix_mult_assoc. rewrite invmat.

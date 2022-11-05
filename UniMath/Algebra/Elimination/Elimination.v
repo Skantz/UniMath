@@ -178,8 +178,7 @@ Section LeadingEntry.
     destruct (leading_entry_compute_dual_internal
       (λ i : (⟦ n ⟧)%stn, _) (n,, natgthsnn _)) as [s | contr].
     - assert (e_2 : dualelement s = i_1). {apply just_injectivity. apply e_1. }
-      apply dualelement_eq in e_2.
-      rewrite e_2.
+      apply dualelement_eq in e_2; rewrite e_2.
       exists s; now rewrite e_2.
     - unfold just, nothing in e_1. contradiction (negpathsii1ii2 i_1 tt).
       apply pathsinv0, e_1.
@@ -196,18 +195,13 @@ Section LeadingEntry.
     induction iter as [| iter IH]. { simpl; intros. contradiction (negpathsii1ii2 _ _ (!not_nothing)). }
     rewrite nat_rect_step.
     destruct (fldchoice0 _) as [eq0| neq0].
-    - intros H.
-      apply IH in H.
-      destruct H as [lt neq0].
+    - intros H; apply IH in H; destruct H as [lt neq0].
       use tpair. {apply (istransnatlth _ _ _  lt (natgthsnn iter) ). }
       apply neq0.
     - intros ?.
-      rename not_nothing into eq.
-      apply just_injectivity in eq.
+      rename not_nothing into eq; apply just_injectivity in eq.
       use tpair. {rewrite <- eq. apply natgthsnn. }
-      simpl.
-      rewrite <- eq.
-      exact neq0.
+      rewrite <- eq; exact neq0.
   Defined.
 
   Definition leading_entry_compute_dual_internal_inv2
@@ -223,14 +217,10 @@ Section LeadingEntry.
     { apply fromempty; now apply negnatlthn0 in i_lt_iter. }
     rewrite nat_rect_step.
     destruct (fldchoice0 (v (iter,, p))) as [eq0 | ?].
-    2 : { simpl; unfold just; intros contr.
-          apply negpathsii1ii2 in contr.
-          now apply fromempty.
-    }
-    destruct (natlehchoice i iter) as [le | eq].
-      {now apply natlthsntoleh. }
+    2 : { intros contr; now apply negpathsii1ii2 in contr. }
+    destruct (natlehchoice i iter) as [le | eq]. {now apply natlthsntoleh. }
     - intros H; now apply IH in H.
-    - intros ?. refine (_ @ eq0). apply maponpaths, stn_eq, eq.
+    - intros ?; refine (_ @ eq0); apply maponpaths, stn_eq, eq.
   Defined.
 
   Definition leading_entry_compute_dual_internal_inv3
@@ -247,13 +237,13 @@ Section LeadingEntry.
     set (p' := istransnatlth iter _ _ p (natgthsnn _)).
     pose (@leading_entry_compute_dual_internal n v (S _,, p)) as H.
     destruct (maybe_choice' H) as [s | c].
-    2: {unfold H in c. intros; rewrite eq in c. contradiction (negpathsii1ii2 _ _ c). }
+    2: {unfold H in c; intros; rewrite eq in c; contradiction (negpathsii1ii2 _ _ c). }
     unfold leading_entry_compute_dual_internal; rewrite nat_rect_step.
     destruct (fldchoice0 (v (iter,, p) )) as [z | nz].
     - intros H'.
       simpl; intros i' ? ?.
       destruct (natlehchoice i' iter) as [? | eq']. {assumption. }
-      2: {refine (_self_inverse @ z); apply maponpaths, stn_eq, eq'. }
+      2: {refine (_ @ z); apply maponpaths, stn_eq, eq'. }
       apply (IH p'); try assumption.
     - intros ? j i_le_iter lts.
       apply natlthtonegnatgeh in i_le_iter.
@@ -289,11 +279,8 @@ Section LeadingEntry.
               (λ i : (⟦ n ⟧)%stn, v (dualelement i)) (n,, natgthsnn _)))
       as [t | contr_eq].
     2: { contradiction (@negpathsii1ii2 ((⟦ n ⟧)%stn) unit i' tt).
-         unfold just in H1; rewrite <- H1.
-         now rewrite contr_eq. }
-    destruct t as [t H4].
-    destruct (!H2).
-    destruct H3 as [H5 H6]; try now rewrite dualelement_2x.
+         unfold just in H1; rewrite <- H1; now rewrite contr_eq. }
+    destruct t as [t H4], (!H2), H3 as [H5 H6]; try now rewrite dualelement_2x.
     use tpair; simpl. { now rewrite dualelement_2x in H5. }
     intros j lt.
     change 0%ring with (@rigunel1 F) in *.
@@ -317,8 +304,7 @@ Section LeadingEntry.
     - now apply negnatlthn0 in i_lt_iter.
     - rewrite nat_rect_step.
       destruct (fldchoice0 _) as [? | _].
-      2 : { simpl; unfold just.
-            intros contr.
+      2 : { simpl; unfold just; intros contr.
             apply negpathsii1ii2 in contr.
             now apply fromempty.
       }
@@ -378,21 +364,18 @@ Section Pivot.
     coprod ((∑ i: ⟦ m ⟧%stn, row_sep ≤ i × ((mat i k) != 0%ring)))
             (∏ i : ⟦ m ⟧%stn, row_sep ≤ i -> mat i k = 0%ring).
   Proof.
-    pose
-      (H := (@leading_entry_compute_dual_internal_inv1 _
-      _ (col mat k) (m,, natgthsnn _))).
-    destruct
-      (maybe_choice' (leading_entry_compute_dual_internal
-      _ (col mat k) (m,, natgthsnn _)))
+    pose (H := (@leading_entry_compute_dual_internal_inv1 _
+                          _ (col mat k) (m,, natgthsnn _))).
+    destruct (maybe_choice' (leading_entry_compute_dual_internal
+                              _ (col mat k) (m,, natgthsnn _)))
       as [some | none].
     - destruct some as [t ist].
       destruct (H t) as [lt neq0]; try assumption.
       destruct (natlthorgeh t row_sep) as [? | gt].
       2: { apply ii1; exists t, gt; apply neq0. }
       apply ii2.
-      destruct
-        (@leading_entry_compute_dual_internal_inv4
-        _ _ (col mat k) (m,, natgthsnn _) t ist) as [H3 H4].
+      destruct (@leading_entry_compute_dual_internal_inv4
+                _ _ (col mat k) (m,, natgthsnn _) t ist) as [H3 H4].
       intros i ke_le_i.
       unfold col, transpose, flip in * |-.
       rewrite H4; try easy.
@@ -1098,16 +1081,16 @@ Section Gauss.
     -> is_row_echelon_partial_1 (gauss_clear_row mat (pr1 row_sep,, p'))
         (S (pr1 row_sep),, p').
   Proof.
-     intros H1.
-     unfold is_row_echelon_partial_1.
-     unfold gauss_clear_rows_up_to.
-     intros i_1 i_2 j_1 j_2 i1_lt H2 i1_lt_i2 j1_lt_j2.
-     revert H2; unfold gauss_clear_row; clear p.
-     destruct (natchoice0 n) as [contr_eq | p].
+    intros H1.
+    unfold is_row_echelon_partial_1.
+    unfold gauss_clear_rows_up_to.
+    intros i_1 i_2 j_1 j_2 i1_lt H2 i1_lt_i2 j1_lt_j2.
+    revert H2; unfold gauss_clear_row; clear p.
+    destruct (natchoice0 n) as [contr_eq | p].
     { apply fromstn0. now rewrite contr_eq. }
-     destruct (select_uncleared_column _ _)
-     as [[piv_c [_ [piv_r [leh [neq0 eq0]]]]] | none]; simpl.
-     2: { intros isle.
+    destruct (select_uncleared_column _ _)
+    as [[piv_c [_ [piv_r [leh [neq0 eq0]]]]] | none]; simpl.
+    2 : { intros isle.
           destruct (natlehchoice i_1 (pr1 row_sep)) as [? | eq];
             try assumption.
           {rewrite (H1 i_1 i_2 j_1 j_2); try easy. }
@@ -1115,16 +1098,16 @@ Section Gauss.
           2: {exact (pr2 (j_1)). }
           apply natgthtogeh; simpl.
           now rewrite <- eq.
-     }
-     intros is_le.
-     rewrite gauss_clear_column_inv1 in is_le.
-     2 : { now apply natlthsntoleh. }
-     destruct (natlehchoice i_1 (pr1 row_sep)) as [lt | eq].
-     { now apply natlthsntoleh. }
-     { rewrite switch_row_other_row' in is_le.
-        3: { apply natlthtoneq. refine (natlthlehtrans _ _ _ lt leh). }
-        2: { now apply natlthtoneq. }
-        rewrite gauss_clear_column_inv4.
+    }
+    intros is_le.
+    rewrite gauss_clear_column_inv1 in is_le.
+    2 : { now apply natlthsntoleh. }
+    destruct (natlehchoice i_1 (pr1 row_sep)) as [lt | eq].
+    { now apply natlthsntoleh. }
+    { rewrite switch_row_other_row' in is_le.
+      3: { apply natlthtoneq. refine (natlthlehtrans _ _ _ lt leh). }
+      2: { now apply natlthtoneq. }
+      rewrite gauss_clear_column_inv4.
         { rewrite switch_row_equal_entries.
           - now rewrite (H1 i_1 i_2 j_1 j_2).
           - do 2 (rewrite (H1 i_1 _ j_1 j_2); try easy).
@@ -1163,8 +1146,7 @@ Section Gauss.
           - now rewrite <- (stn_eq_2 _ _ eq).
     }
     contradiction neq0.
-    destruct (natlehchoice i_1 (pr1 row_sep)) as [lt | eq'].
-      { now apply natlthsntoleh. }
+    destruct (natlehchoice i_1 (pr1 row_sep)) as [lt | eq']. { now apply natlthsntoleh. }
     - rewrite switch_row_other_row' in is_le.
       3: { apply natlthtoneq. refine (natlthlehtrans _ _ _ lt leh). }
       2: { now apply natlthtoneq. }
@@ -1299,8 +1281,7 @@ Section Gauss.
         (gauss_clear_rows_up_to mat row_sep) row_sep.
   Proof.
     intro i_1; intros i_2 lt eq ?.
-    rewrite (gauss_clear_rows_up_to_inv0 _ row_sep p i_1 lt eq i_2);
-      try assumption.
+    rewrite (gauss_clear_rows_up_to_inv0 _ row_sep p i_1 lt eq i_2); try assumption.
     now destruct row_sep.
   Defined.
 
