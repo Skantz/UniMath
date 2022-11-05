@@ -23,7 +23,7 @@ Require Import UniMath.Algebra.Elimination.Elimination.
   We use this procedure to show that any nxn matrix either not invertible,
   or calculate its inverse.
 
-  Author: Daniel @Skantz (September 2022)
+  Primary Author: Daniel @Skantz (November 2022)
 *)
 
 Definition matrix_inverse_or_non_invertible_stmt

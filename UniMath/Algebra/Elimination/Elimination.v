@@ -2,7 +2,7 @@
 
 Gaussian Elimination over fields.
 
-Author: Daniel @Skantz (September 2022)
+Primary Author: Daniel @Skantz (November 2022)
   With much help from, and thanks to, Peter LeFanu Lumsdaine
 *)
 

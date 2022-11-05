@@ -10,7 +10,7 @@ Require Import UniMath.RealNumbers.Prelim.
 (** Observing/testing the extent that it is
     possible to compute some of the Elimination material.
 
-    Primary author: Daniel @Skantz (September 2022) *)
+    Primary author: Daniel @Skantz (November 2022) *)
 
 (** This section tests just the matrix/vector operations, avoiding use of the ring operations as far as possible. *)
 Section Tests_1.
