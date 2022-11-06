@@ -581,24 +581,6 @@ Section Rings_and_Fields.
     - apply fldmultinvrax.
   Defined.
 
-  Lemma isdecpropfld0
-    {X: fld} (e : X) : isdecprop (e = (@rigunel1 X)).
-  Proof.
-    apply isdecpropif. 2: {apply fldchoice0. }
-    apply isaproppathstoisolated; intros x.
-    destruct (fldchoice0 x) as [eq' | neq]; try contradiction.
-    - left; rewrite eq'; apply idpath.
-    - right; intros ?; contradiction neq; easy.
-  Defined.
-
-  Lemma isdecpropfldnot0
-    {X: fld} (e : X) : isdecprop (e != (@rigunel1 X)).
-  Proof.
-    apply isdecpropif. {apply isapropneg. }
-    destruct (fldchoice0 e) as [eq | ?]. 2: {left; assumption. }
-    right; rewrite eq; intros x; contradiction.
-  Defined.
-
 End Rings_and_Fields.
 
 (** * Rationals *)
