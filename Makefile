@@ -29,7 +29,7 @@ PACKAGES += HomologicalAlgebra
 PACKAGES += AlgebraicGeometry
 PACKAGES += Paradoxes
 PACKAGES += Induction
-PACKAGES += AlgebraicTheories
+# PACKAGES += AlgebraicTheories
 PACKAGES += Semantics
 ############################################
 # other user options; see also build/Makefile-configuration-template
